@@ -24,6 +24,7 @@ class CoordConv2D(keras.layers.Layer):
 
     Liu, Rosanne, et al. "An intriguing failing of convolutional neural networks and
     the coordconv solution." Advances in neural information processing systems 31 (2018).
+
     """
     def __init__(self, filters,
                       kernel_size,
@@ -64,7 +65,7 @@ class CoordConv2D(keras.layers.Layer):
 
     def call(self, inputs):
         """
-        inputs is a tuple:
+        inputs is a tuple
            [N, L, W, C] data tensor,
            [N, L, W, nd] tensor of coordinates.
         """
