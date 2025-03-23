@@ -14,16 +14,18 @@ Delivered to the U.S. Government with Unlimited Rights, as defined in DFARS Part
 """
 Tools to read tornado samples
 """
-from typing import Dict, List, Callable
 import datetime
+import os
+from typing import Callable, Dict, List
+
 import numpy as np
+import pandas as pd
 import xarray as xr
 
-from tornet.data.constants import ALL_VARIABLES
-import os
-import pandas as pd
+from tornet.tornet.data.constants import ALL_VARIABLES
 
-def read_file(f: str, 
+
+def read_file(f: str,
               variables: List['str']=ALL_VARIABLES,
               n_frames:int=1,
               tilt_last:bool=True) -> Dict[str,np.ndarray]:
@@ -32,7 +34,7 @@ def read_file(f: str,
 
     Inputs:
     f: nc filename
-    variables:  List of radar variables to load.  
+    variables:  List of radar variables to load.
                 Default is all 6 variables ['DBZ','VEL','KDP','RHOHV','ZDR','WIDTH']
     n_frames:  number of frames to use. 1=last frame only.  No more than 4
                Default is 1.
@@ -42,14 +44,14 @@ def read_file(f: str,
     Returns:
     Dict containing data for each variable, along with several metadata fields.
     """
-    
+
     data = {}
     with xr.open_dataset(f) as ds:
-        
+
         # Load each radar variable
         for v in variables:
             data[v]=ds[v].values[-n_frames:,:,:,:]
-        
+
         # Various numeric metadata
         data['range_folded_mask'] = ds['range_folded_mask'].values[-n_frames:,:,:,:].astype(np.float32) # only two channels for vel,width
         data['label'] = ds['frame_labels'].values[-n_frames:] # 1 if tornado, 0 otherwise
@@ -57,11 +59,11 @@ def read_file(f: str,
         data['event_id']=np.array([int(ds.attrs['event_id'])],dtype=np.int64)
         data['ef_number']=np.array([int(ds.attrs['ef_number'])],dtype=np.int64)
         data['az_lower']=np.array(ds['azimuth_limits'].values[0:1])
-        data['az_upper']=np.array(ds['azimuth_limits'].values[1:]) 
+        data['az_upper']=np.array(ds['azimuth_limits'].values[1:])
         data['rng_lower']=np.array(ds['range_limits'].values[0:1])
         data['rng_upper']=np.array(ds['range_limits'].values[1:])
         data['time']=(ds.time.values[-n_frames:].astype(np.int64)/1e9).astype(np.int64)
-        
+
         # Store start/end times for tornado (Added in v1.1)
         if ds.attrs['ef_number']>=0 and ('tornado_start_time' in ds.attrs):
             start_time=datetime.datetime.strptime(ds.attrs['tornado_start_time'],'%Y-%m-%d %H:%M:%S')
@@ -76,27 +78,27 @@ def read_file(f: str,
         data['tornado_end_time'] = np.array([end_time]).astype(np.int64)
 
     # Fix for v1.0 of the data
-    # Make sure final label is consistent with ef_number 
+    # Make sure final label is consistent with ef_number
     data['label'][-1] = (data['ef_number'][0]>=0)
-    
-    if not tilt_last: 
+
+    if not tilt_last:
         for v in variables+['range_folded_mask']:
             data[v]=np.transpose(data[v],(0,3,1,2))
-        
+
     return data
 
-def query_catalog(data_root: str, 
-                  data_type: str, 
-                  years: list[int], 
+def query_catalog(data_root: str,
+                  data_type: str,
+                  years: list[int],
                   random_state: int,
                   catalog: pd.DataFrame=None) -> list[str]:
     """Obtain file names that match criteria.
-    If catalog is not provided, this loads and parses the 
+    If catalog is not provided, this loads and parses the
     default catalog.
 
     Inputs:
     data_root: location of data
-    data_type: train or test 
+    data_type: train or test
     years: list of years btwn 2013 - 2022 to draw data from
     random_state: random seed for shuffling files
     catalog:  Preloaded catalog, optional
@@ -116,7 +118,7 @@ def query_catalog(data_root: str,
 class TornadoDataLoader:
     """
     Tornado data loader class
-    
+
     file_list:    list of TorNet filenames to load
     variables: list of TorNet variables to load (subset of ALL_VARIABLES)
     n_frames:  number of time frames to load (ending in last frame)
@@ -124,7 +126,7 @@ class TornadoDataLoader:
     tilt_last:  If True (default), order of dimensions is left as [time,azimuth,range,tilt]
                 If False, order is permuted to [time,tilt,azimuth,range]
                 (if other dim orders are needed, use a transform)
-    transform:  If provided, this callable is applied to transform each sample 
+    transform:  If provided, this callable is applied to transform each sample
                 before being returned
 
     """
@@ -134,7 +136,7 @@ class TornadoDataLoader:
                  n_frames:int=1,
                  shuffle:bool=False,
                  tilt_last:bool=True,
-                 transform:Callable=None 
+                 transform:Callable=None
                  ):
         if shuffle:
             np.random.shuffle(file_list)
@@ -213,6 +215,7 @@ def get_dataloader(
 
     if "tensorflow" in dataloader:
         import tensorflow as tf
+
         from tornet.data.tf.loader import make_tf_loader
         ds = make_tf_loader(data_root,data_type,years,batch_size,weights,from_tfds=from_tfds,**kwargs)
 

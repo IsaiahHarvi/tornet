@@ -10,8 +10,10 @@ The software/firmware is provided to you on an As-Is basis
 Delivered to the U.S. Government with Unlimited Rights, as defined in DFARS Part 252.227-7013 or 7014 (Feb 2014). Notwithstanding any copyright notice, U.S. Government rights in this work are defined by DFARS 252.227-7013 or DFARS 252.227-7014 as detailed above. Use of this work other than as specifically authorized by the U.S. Government may violate any copyrights that exist in this work.
 """
 from typing import Dict, List
+
 import numpy as np
-from tornet.data.constants import ALL_VARIABLES
+
+from tornet.tornet.data.constants import ALL_VARIABLES
 
 
 def get_shape(d):
@@ -45,7 +47,7 @@ def compute_coordinates(d,min_range_m=2125.0,
     Coordinates are stacked along the "tilt" dimension, which is assumed
     to be the final dimension if tilt_last=True.  If tilt_last=False,
     coordinates are concatenated along axis=0.
-    
+
     backend can be np, tf or torch (pass actual imported module)
 
     min_range_m is minimum possible range of radar data in meters
@@ -60,14 +62,14 @@ def compute_coordinates(d,min_range_m=2125.0,
     rng_lower = (d['rng_lower']+250) * SCALE # [1,]
     rng_upper = (d['rng_upper']-250) * SCALE # [1,]
     min_range_m *= SCALE
-    
+
     # Get az range,  convert to math convention where 0 deg is x-axis
     az_lower = d['az_lower']
     az_lower = (90-az_lower) * np.pi/180 # [1,]
     az_upper = d['az_upper']
     az_upper = (90-az_upper) * np.pi/180 # [1,]
-    
-    # create mesh grids 
+
+    # create mesh grids
     az = backend.linspace( az_lower,  az_upper, shape[0] )
     rg = backend.linspace( rng_lower, rng_upper, shape[1] )
     R,A = backend.meshgrid(rg,az,indexing='xy')
@@ -76,14 +78,14 @@ def compute_coordinates(d,min_range_m=2125.0,
     R = backend.where( R>=min_range_m, R, min_range_m)
 
     Rinv=1/R
-    
+
     cat_axis = -1 if tilt_last else 0
     if include_az:
         c = backend.stack( (R,A,Rinv), axis=cat_axis )
     else:
         c = backend.stack( (R,Rinv), axis=cat_axis )
     return c
-    
+
 
 def remove_time_dim(d):
     """
@@ -101,7 +103,7 @@ def add_batch_dim(data: Dict[str,np.ndarray]):
         data[k] = data[k][None,...]
     return data
 
-def select_keys(x: Dict[str,np.ndarray], 
+def select_keys(x: Dict[str,np.ndarray],
                 keys: List[str]=None):
     """
     Selects list of keys from input data
@@ -133,7 +135,7 @@ def compute_sample_weight(x,y,wN=1.0,w0=1.0,w1=1.0,w2=1.0,wW=0.5, backend=np):
     """
     Assigns sample weights to samples in x,y based on
     ef_number of tornado
-    
+
     category,  weight
     -----------
     random      wN
