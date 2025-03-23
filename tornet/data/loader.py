@@ -49,8 +49,6 @@ def read_file(
 
     data = {}
     with xr.open_dataset(f) as ds:
-        print(f"\n{list(ds.variables.keys())}\n")
-
         # Load each radar variable
         for v in variables:
             data[v] = ds[v].values[-n_frames:, :, :, :]
@@ -206,6 +204,7 @@ def get_dataloader(
     data_type: str,
     batch_size: int,
     weights: Dict[str, float] = None,
+    file_list=None,
     **kwargs,
 ):
     """Creates a dataloader for keras, torch or tensorflow
@@ -230,8 +229,6 @@ def get_dataloader(
 
     # Argument validation
     valid_dataloaders = [
-        "tensorflow",
-        "tensorflow-tfds",
         "torch",
         "torch-tfds",
         "keras",
@@ -250,7 +247,7 @@ def get_dataloader(
     if "tensorflow" in dataloader:
         import tensorflow as tf
 
-        from tornet.data.tf.loader import make_tf_loader
+        from tornet.tornet.data.tf.loader import make_tf_loader
 
         ds = make_tf_loader(
             data_root,
@@ -269,7 +266,7 @@ def get_dataloader(
         ds = ds.with_options(data_opts)
 
     elif "torch" in dataloader:
-        from tornet.data.torch.loader import make_torch_loader
+        from tornet.tornet.data.torch.loader import make_torch_loader
 
         ds = make_torch_loader(
             data_root,
@@ -281,7 +278,7 @@ def get_dataloader(
             **kwargs,
         )
     else:
-        from tornet.data.keras.loader import KerasDataLoader
+        from tornet.tornet.data.keras.loader import KerasDataLoader
 
         ds = KerasDataLoader(
             data_root=data_root,
@@ -289,6 +286,7 @@ def get_dataloader(
             years=years,
             batch_size=batch_size,
             weights=weights,
+            file_list=file_list,
             **kwargs,
         )
 

@@ -71,7 +71,7 @@ def main():
         data_root,
         test_years,
         "test",
-        64,
+        256,
         select_keys=list(model.input.keys()),
     )
 
@@ -89,7 +89,8 @@ def main():
     ]
     model.compile(metrics=metrics)
 
-    scores = model.evaluate(ds_test)
+    scores = model.predict(ds_test)
+    print(scores)
     scores = {m.name: scores[k + 1] for k, m in enumerate(metrics)}
 
     logging.info(scores)

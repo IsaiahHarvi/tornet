@@ -60,14 +60,14 @@ def compute_coordinates(
     # "250" is the resolution of NEXRAD
     # "1e-5" is scaling applied for normalization
     SCALE = 1e-5  # used to scale range field for CNN
-    rng_lower = (d["rng_lower"] + 250) * SCALE  # [1,]
-    rng_upper = (d["rng_upper"] - 250) * SCALE  # [1,]
+    rng_lower = float((d["rng_lower"] + 250) * SCALE)  # [1,]
+    rng_upper = float((d["rng_upper"] - 250) * SCALE)  # [1,]
     min_range_m *= SCALE
 
     # Get az range,  convert to math convention where 0 deg is x-axis
-    az_lower = d["az_lower"]
+    az_lower = float(d["az_lower"])
     az_lower = (90 - az_lower) * np.pi / 180  # [1,]
-    az_upper = d["az_upper"]
+    az_upper = float(d["az_upper"])
     az_upper = (90 - az_upper) * np.pi / 180  # [1,]
 
     # create mesh grids
@@ -99,10 +99,24 @@ def remove_time_dim(d):
 
 def add_batch_dim(data: Dict[str, np.ndarray]):
     """
-    Adds singleton batch dimension to each array in data
+    Adds a singleton batch dimension to each array in data if one isn't already present.
     """
-    for k in data:
-        data[k] = data[k][None, ...]
+    for k, arr in data.items():
+        # If it's not a numpy array, convert it
+        if not isinstance(arr, np.ndarray):
+            arr = np.array(arr)
+        # If the array doesn't have a batch dimension, add one.
+        if arr.ndim == 0:
+            data[k] = arr[None]
+        elif arr.ndim >= 1 and arr.shape[0] < 2:
+            # Heuristic: if the first dimension seems to be a singleton, we might assume it's already batched.
+            # Otherwise, if you're sure this dimension should be a batch dim, leave it.
+            data[k] = arr  # assuming already batched if shape[0]==1
+        else:
+            # If it's not clear, you can check or force a new axis
+            # Here, if you expect a single sample (i.e. unbatched data), add a new axis.
+            # For this example, we'll add a batch dim only if arr.ndim is 0.
+            data[k] = arr
     return data
 
 

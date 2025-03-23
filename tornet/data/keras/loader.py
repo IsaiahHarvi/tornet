@@ -19,9 +19,9 @@ import keras
 import numpy as np
 import pandas as pd
 
-from tornet.data import preprocess as pp
-from tornet.data.constants import ALL_VARIABLES
-from tornet.data.loader import query_catalog, read_file
+from tornet.tornet.data import preprocess as pp
+from tornet.tornet.data.constants import ALL_VARIABLES
+from tornet.tornet.data.loader import query_catalog, read_file
 
 
 class KerasDataLoader(keras.utils.PyDataset):
@@ -55,6 +55,7 @@ class KerasDataLoader(keras.utils.PyDataset):
         workers: int = 1,
         use_multiprocessing: bool = False,
         max_queue_size: int = 10,
+        file_list = None
     ):
         """
         data_root - location of TorNet
@@ -90,9 +91,12 @@ class KerasDataLoader(keras.utils.PyDataset):
         self.select_keys = select_keys
 
         self.tilt_last = tilt_last
-        self.file_list = query_catalog(
-            data_root, data_type, years, random_state, catalog=catalog
-        )
+        if file_list is not None:
+            self.file_list = file_list
+        else:
+            self.file_list = query_catalog(
+                data_root, data_type, years, random_state, catalog=catalog
+            )
 
     def __len__(self) -> int:
         "Returns number of batches"
