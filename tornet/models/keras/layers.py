@@ -26,15 +26,18 @@ class CoordConv2D(keras.layers.Layer):
     the coordconv solution." Advances in neural information processing systems 31 (2018).
 
     """
-    def __init__(self, filters,
-                      kernel_size,
-                      kernel_regularizer,
-                      activation,
-                      padding='same',
-                      strides=(1, 1),
-                      conv2d_kwargs={},
-                      **kwargs):
 
+    def __init__(
+        self,
+        filters,
+        kernel_size,
+        kernel_regularizer,
+        activation,
+        padding="same",
+        strides=(1, 1),
+        conv2d_kwargs={},
+        **kwargs,
+    ):
         super(CoordConv2D, self).__init__(**kwargs)
 
         self.filters = filters
@@ -53,7 +56,7 @@ class CoordConv2D(keras.layers.Layer):
             activation=self.activation,
             padding=self.padding,
             strides=self.strides,
-            **conv2d_kwargs
+            **conv2d_kwargs,
         )
 
     def build(self, input_shape):
@@ -78,34 +81,38 @@ class CoordConv2D(keras.layers.Layer):
         conv = self.conv(x)
 
         # Adjust coordinates to match conv output shape
-        if self.padding == 'same' and self.strd > 1:
-            coords = coords[:, ::self.strd, ::self.strd]
-        elif self.padding == 'valid':
+        if self.padding == "same" and self.strd > 1:
+            coords = coords[:, :: self.strd, :: self.strd]
+        elif self.padding == "valid":
             i0 = self.kernel_size[0] // 2
             if i0 > 0:
-                coords = coords[:, i0:-i0:self.strd, i0:-i0:self.strd]
+                coords = coords[:, i0 : -i0 : self.strd, i0 : -i0 : self.strd]
             else:
-                coords = coords[:, ::self.strd, ::self.strd]
+                coords = coords[:, :: self.strd, :: self.strd]
 
         return conv, coords
 
     def get_config(self):
         """Return the configuration of the layer for serialization."""
         config = super().get_config()
-        config.update({
-            "filters": self.filters,
-            "kernel_size": self.kernel_size,
-            "kernel_regularizer": self.kernel_regularizer,
-            "activation": self.activation,
-            "padding": self.padding,
-            "strides": self.strides,
-            "conv2d_kwargs": self.conv2d_kwargs
-        })
+        config.update(
+            {
+                "filters": self.filters,
+                "kernel_size": self.kernel_size,
+                "kernel_regularizer": self.kernel_regularizer,
+                "activation": self.activation,
+                "padding": self.padding,
+                "strides": self.strides,
+                "conv2d_kwargs": self.conv2d_kwargs,
+            }
+        )
         return config
+
 
 @keras.saving.register_keras_serializable()
 class FillNaNs(keras.layers.Layer):
     """Fill NaNs with a specified fill value."""
+
     def __init__(self, fill_val, **kwargs):
         super(FillNaNs, self).__init__(**kwargs)
         self.fill_val = fill_val
